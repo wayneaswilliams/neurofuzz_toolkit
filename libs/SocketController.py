@@ -235,7 +235,9 @@ class SocketController:
                 dir_path = self.datadir + '/tor' + str(t_instance)
                 if not os.path.exists(dir_path):
                     os.makedirs(dir_path)
-                f = open(dir_path + '/' + fname, "w")
+                #f = open(dir_path + '/' + fname, "w")
+                with open (dir_path + '/' + fname, "w") as myfile:
+                    pass
             except IOError:
                 pass
             
