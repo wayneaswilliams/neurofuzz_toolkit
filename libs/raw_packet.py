@@ -1,12 +1,63 @@
-'''
+"""
+    Author: Andres Andreu < andres at neurofuzzsecurity dot com >
+    Company: neuroFuzz, LLC
+    Date: 12/29/2015
+    Last Modified: 06/17/2016
+    
+    some functions to facilitate the creation of crafted raw packets
+    
+    the original source/ideas came from:
+    http://www.arti-sec.com/article/spse-module-2-lesson-4-syn-scanner-python
+    
 
-'''
+    BSD 3-Clause License
+    
+    Copyright (c) 2015-2016, Andres Andreu, neuroFuzz LLC
+    All rights reserved.
+    
+    Redistribution and use in source and binary forms, with or without modification,
+    are permitted provided that the following conditions are met:
+    
+    1. Redistributions of source code must retain the above copyright notice,
+    this list of conditions and the following disclaimer.
+    
+    2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation and/or
+    other materials provided with the distribution.
+    
+    3. Neither the name of the copyright holder nor the names of its contributors may
+    be used to endorse or promote products derived from this software without specific
+    prior written permission.
+    
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
+    EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+    OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+    IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+    INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+    BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+    OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+    WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+    ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
+    OF SUCH DAMAGE.
+    
+    *** Take note:
+    If you use this for criminal purposes and get caught you are on
+    your own and I am not liable. I wrote this for legitimate
+    pen-testing and auditing purposes.
+    ***
+    
+    Be kewl and give credit where it is due if you use this. Also,
+    send me feedback as I don't have the bandwidth to test for every
+    condition - Dre 
+"""
 import random
 import socket
 from struct import *
 
 
 def checksum(msg):
+    ''' '''
+    
     s = 0
     # loop taking 2 characters at a time
     for i in range(0, len(msg), 2):
@@ -78,79 +129,18 @@ def create_tcp_syn_header(src_ip='', dst_ip='', dst_port=0):
     
     return tcp_header
 
-
-
-
 def construct_raw_packet(src='', dst=''):
+    ''' '''
     
     packet = '';
- 
-    source_ip = src
-    dest_ip = dst
-
-    ''' 
-    # ip header fields
-    ihl = 5
-    version = 4
-    tos = 0
-    tot_len = 20 + 20   # python seems to correctly fill the total length, dont know how ??
-    id = 54321  #Id of this packet
-    frag_off = 0
-    ttl = 255
-    protocol = socket.IPPROTO_TCP
-    check = 10  # python seems to correctly fill the checksum
-    saddr = socket.inet_aton ( source_ip )  # spoof the source ip address
-    daddr = socket.inet_aton ( dest_ip )
- 
-    ihl_version = (version << 4) + ihl
-     
-    # the ! in the pack format string means network order
-    ip_header = pack('!BBHHHBBH4s4s' , ihl_version, tos, tot_len, id, frag_off, ttl, protocol, check, saddr, daddr)
-    '''
-    ip_header = create_ip_header(src_ip=source_ip, dst_ip=dest_ip)
+    if src and dst:
+        source_ip = src
+        dest_ip = dst
     
-    ''' 
-    # tcp header fields
-    source = 1234   # source port
-    dest = 80   # destination port
-    seq = 0
-    ack_seq = 0
-    doff = 5    #4 bit field, size of tcp header, 5 * 4 = 20 bytes
-    #tcp flags
-    fin = 0
-    syn = 1
-    rst = 0
-    psh = 0
-    ack = 0
-    urg = 0
-    window = socket.htons (5840)    #   maximum allowed window size
-    check = 0
-    urg_ptr = 0
+        ip_header = create_ip_header(src_ip=source_ip, dst_ip=dest_ip)
+        tcp_header = create_tcp_syn_header(src_ip=source_ip, dst_ip=dest_ip, dst_port=80)
      
-    offset_res = (doff << 4) + 0
-    tcp_flags = fin + (syn << 1) + (rst << 2) + (psh <<3) + (ack << 4) + (urg << 5)
-     
-    # the ! in the pack format string means network order
-    tcp_header = pack('!HHLLBBHHH' , source, dest, seq, ack_seq, offset_res, tcp_flags,  window, check, urg_ptr)
-     
-    # pseudo header fields
-    source_address = socket.inet_aton(source_ip)
-    dest_address = socket.inet_aton(dest_ip)
-    placeholder = 0
-    protocol = socket.IPPROTO_TCP
-    tcp_length = len(tcp_header)
-     
-    psh = pack('!4s4sBBH' , source_address , dest_address , placeholder , protocol , tcp_length);
-    psh = psh + tcp_header;
-     
-    tcp_checksum = checksum(psh)
-     
-    # make the tcp header again and fill the correct checksum
-    tcp_header = pack('!HHLLBBHHH' , source, dest, seq, ack_seq, offset_res, tcp_flags,  window, tcp_checksum , urg_ptr)
-    '''
-    tcp_header = create_tcp_syn_header(src_ip=source_ip, dst_ip=dest_ip, dst_port=80)
- 
-    # final full packet - syn packets dont have any data
-    packet = ip_header + tcp_header
+        # syn packets dont have any data so this is enuf
+        packet = ip_header + tcp_header
     
     return packet
