@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 08/05/2015
+    Last Modified: 06/17/2016
     
     generic functions that operate at a system level
 
@@ -48,10 +48,14 @@
 """
 import sys
 import os
+import re
 import fnmatch
 import socket
+import itertools
 import logging
 import platform
+
+import ipaddr
 
 
 def get_lock(process_name='', process_description=''):
@@ -91,8 +95,16 @@ def which(program=""):
             return program
     else:
         tarr = os.environ["PATH"].split(os.pathsep)
+        '''
+            append to 'tarr' as needed if you discover that this
+            code doesn't find stuff on your systems. And if it is
+            generic enough (meaning not only relevant to your
+            system) please get that data back to me so that we
+            can all benefit from it.
+        '''
         tarr.append("/sbin")
         tarr.append("./")
+        
         for path in tarr:
             exe_file = os.path.join(path, program)
             for candidate in ext_candidates(exe_file):
@@ -109,6 +121,50 @@ def find_file(filename='', top="/"):
     return None
 
 
+def find_files_by_pattern(treeroot, pattern):
+    ''' Walk the path and look for hits based on the pattern provided '''
+    results = []
+    for base, dirs, files in os.walk(treeroot):
+        goodfiles = fnmatch.filter(files, pattern)
+        results.extend(os.path.join(base, f) for f in goodfiles)
+    return results
+
+
 def get_os_string():
     ''' Finds the linux distribution in use '''
     return platform.linux_distribution()[0]
+
+
+def get_local_ip():
+    ''' return the ip address of the system running code that uses this lib '''
+    ifconfig_prog = None
+    ifconfig_prog = which(program='ifconfig')
+    
+    if ifconfig_prog:
+        f = os.popen(ifconfig_prog)
+        for iface in [' '.join(i) for i in iter(lambda: list(itertools.takewhile(lambda l: not l.isspace(),f)), [])]:
+            #print iface
+            #print re.findall('(eth|wlan|en)[0-9]',iface)
+            if re.findall('(eth|wlan|en)[0-9]',iface) and re.findall('RUNNING',iface):
+                ip = re.findall('(?<=inet\saddr:)[0-9\.]+',iface)
+                if not ip:
+                    ip = re.findall('(?<=inet\s)[0-9\.]+',iface)
+                #print ip
+                if ip:
+                    '''
+                        TODO - this needs work ... as I have made
+                        some assumptions
+                        
+                        maybe let the user choose the source ip?
+                        maybe add some intelligence here ...
+                    '''
+                    if ip[0].startswith('127'):
+                        ip.pop(0)
+                    return ip[0]
+    return False
+
+
+def target_ip_private(ip_addr=''):
+    ''' returns bool stating whether or not the ip address passed in is private/non-routable '''
+    target_net = ipaddr.IPv4Network(address=ip_addr)
+    return target_net.IsRFC1918()
