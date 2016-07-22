@@ -1,5 +1,5 @@
 '''
-    FILENAME     : modify_hosts_file.py
+    FILENAME     : nftk_modify_hosts_file.py
     AUTHORS      : Andres Andreu <andres [at] neurofuzzsecurity dot com>
     MODIFIED BY  : Andres Andreu
     DATE         : 07/11/2015
