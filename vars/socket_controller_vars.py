@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 07/23/2015
+    Last Modified: 07/21/2016
     
     variables to be used by the SocketController class
     
@@ -123,20 +123,6 @@ def which(prog=''):
 
     return None
 
-torpath = ''
-torpath = which(prog='tor')
-if not torpath:
-    torpath = "/usr/bin/tor"
-'''
-    gotta make sure tor exists and is an
-    executable, otherwise there is no point
-    in continuing
-'''
-if not os.path.exists(torpath) and not os.access(torpath, os.X_OK):
-    import sys
-    print "\ntor executable not found, cannot continue\n\n"
-    sys.exit()
-
 # modifiable variables
 ########################################################
 base_socks_port = 9052
@@ -166,9 +152,6 @@ torarguments = {"--RunAsDaemon":'1',
                 #"--Log":'info file ' + datadir + '/logs/tor_log_' + datetime.datetime.now().strftime('%Y-%m-%d_%H_%M_%S')
                 }
 ########################################################
-
-def getTorPath():
-    return torpath
 
 def getBaseSocksPort():
     return base_socks_port
