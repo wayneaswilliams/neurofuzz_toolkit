@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 08/05/2015
+    Last Modified: 07/21/2016
     
     Class to spawn off a number of instances of tor and set
     a socket to use this SOCKS5 instance
@@ -62,8 +62,8 @@ from random import choice
 from vars import socket_controller_vars
 
 class SocketController:
-    def __init__(self):
-        self.torpath = socket_controller_vars.getTorPath()
+    def __init__(self, tor_executable_path=''):
+        self.torpath = tor_executable_path
         self.base_socks_port = socket_controller_vars.getBaseSocksPort()
         self.base_control_port = socket_controller_vars.getBaseControlPort()
         self.socks_control_ports = {}
