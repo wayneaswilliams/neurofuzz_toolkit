@@ -47,7 +47,7 @@
     condition - Dre 
 """
 import socket
-from raw_packet import *
+from nftk_raw_packet import *
 
 
 def create_raw_socket(is_target_local=False):
