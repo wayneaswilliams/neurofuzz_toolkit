@@ -49,7 +49,7 @@
 import os
 import sys
 
-import nftk_sys_funcs
+import nftk_sys_funcs as sys_funcs
 
 def merge_two_dicts(x, y):
     ''' Given two dicts, merge them into a new dict as a shallow copy '''
