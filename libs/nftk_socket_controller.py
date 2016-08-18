@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 07/21/2016
+    Last Modified: 08/18/2016
     
     Class to spawn off a number of instances of tor and set
     a socket to use this SOCKS5 instance
@@ -55,39 +55,52 @@ except ImportError:
     sys.exit()
 
 import os
+import glob
 import time
 import socket
 import subprocess
 from random import choice
 from vars import socket_controller_vars
 
+def clean_slate():
+    for fname in glob.glob(socket_controller_vars.getDataDir() + '/tor*/tor*.pid'):
+        if os.path.exists(fname):
+            os.remove(fname)
+
 class SocketController:
     def __init__(self, tor_executable_path=''):
         self.torpath = tor_executable_path
-        self.base_socks_port = socket_controller_vars.getBaseSocksPort()
-        self.base_control_port = socket_controller_vars.getBaseControlPort()
+        
         self.socks_control_ports = {}
         self.socks_port_list = []
         self.pids = []
+        
+        self.base_socks_port = socket_controller_vars.getBaseSocksPort()
+        self.base_control_port = socket_controller_vars.getBaseControlPort()
         self.datadir = socket_controller_vars.getDataDir()
         self.torfname = socket_controller_vars.getTorFileName()
         self.torarguments = socket_controller_vars.getTorArguments()
+        
         sbounds = socket_controller_vars.getSocketBounds()
-        self.torSocketLowerBound = sbounds[0]
-        self.torSocketUpperBound = sbounds[1]
+        self.tor_socket_lower_bound = sbounds[0]
+        self.tor_socket_upper_bound = sbounds[1]
+        
         self.lastProxUsed = 0
         self.debug = socket_controller_vars.getDebug()
         self.selfip = socket_controller_vars.getSocketIp()
         socket.setdefaulttimeout(10)
         
-    def getPortList(self):
+    def get_port_list(self):
         return self.socks_port_list
         
-    def setLowerBound(self, val=""):
-        self.torSocketLowerBound = val
+    def set_lower_bound(self, val=""):
+        self.tor_socket_lower_bound = val
         
-    def setUpperBound(self, val=""):
-        self.torSocketUpperBound = val
+    def set_upper_bound(self, val=""):
+        self.tor_socket_upper_bound = val
+        
+    def set_local_ip_addr(self, val=""):
+        self.selfip = val
         
     def setLastUsed(self, val=""):
         self.lastProxUsed = val
@@ -98,87 +111,14 @@ class SocketController:
     def setDebug(self, val=""):
         self.debug = val
         
-    def getDataDir(self):
+    def get_data_dir(self):
         return self.datadir
         
-    def spawnSockets(self):
-        '''
-            kick off a pool of tor instances
-            because each one will have a different
-            path to the target. Had to do it this way
-            because once we are using a tor socks prox
-            the calls to localhost to refresh the
-            tor identity will obviously crap out
-        '''
-        for i in range(self.torSocketLowerBound,self.torSocketUpperBound):
-            '''
-                first create data file
-                Simply opening a file in write mode will create it, if it doesn't exist. 
-                If the file does exist, the act of opening it in write mode will completely
-                overwrite its contents
-            '''
-            fname = self.torfname % str(i)
-            try:
-                dir_path = self.datadir + '/tor' + str(i)
-                if not os.path.exists(dir_path):
-                    os.makedirs(dir_path)
-                    
-                if self.debug:
-                    print dir_path + '/' + fname
-                    
-                f = open(dir_path + '/' + fname, "w")
-            except IOError:
-                pass
-            
-            runstmt = []
-            runstmt.append(self.torpath)
-            
-            bsp = str(self.base_socks_port+i)
-            bcp = str(self.base_control_port+i)
-            self.socks_control_ports[bsp] = bcp
-            self.socks_port_list.append(bsp)
-            
-            for k in self.torarguments.iterkeys():
-                if k == '--ControlPort':
-                    runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % bcp)
-                elif k == '--PidFile':
-                    runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % str(i))
-                elif k == '--SocksPort':
-                    runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % bsp)
-                elif k == '--DataDirectory':
-                    runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % str(i))
-                else:
-                    runstmt.append(k)
-                    runstmt.append(self.torarguments[k])
-            
-            runstmt.append("--quiet")
-            
-            if self.debug:
-                print "\n"
-                print runstmt
-                print "\n"
+    def spawn_sockets(self):
+        ''' kick off a pool of tor instances '''
+        for i in range(self.tor_socket_lower_bound, self.tor_socket_upper_bound):
+            self.spawn_socket(t_instance=i)
 
-            '''
-                notes:
-                
-                tor --RunAsDaemon 1 
-                    --CookieAuthentication 0 
-                    --HashedControlPassword 16:3209E94C0EEF6A9660D0645B037E16730B553C627462CD233F33B0F950
-                    --ControlPort 8124
-                    --PidFile tor4.pid 
-                    --SocksPort 9056 PreferSOCKSNoAuth
-                    --DataDirectory tordata/tor4
-                    --Log info file /path/tordata/logs/tor_log_2015-07-23_09_41_04'
-                    --quiet
-            '''
-            sp = subprocess.Popen(runstmt)            
-            self.pids.append(sp.pid)
-            
-            
     def get_tor_pids(self):
         if self.pids:
             return self.pids
@@ -258,7 +198,7 @@ class SocketController:
                     runstmt.append(self.torarguments[k] % str(t_instance))
                 elif k == '--SocksPort':
                     runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % bsp)
+                    runstmt.append(self.torarguments[k] % (self.selfip,bsp))
                 elif k == '--DataDirectory':
                     runstmt.append(k)
                     runstmt.append(self.torarguments[k] % str(t_instance))

@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 07/21/2016
+    Last Modified: 08/18/2016
     
     variables to be used by the SocketController class
     
@@ -95,34 +95,6 @@ def createTorPassword(secret = ""):
 def createRandAlpha(length=0):
     return ''.join(choice(letters) for x in xrange(length or randint(10, 30)))
 
-
-def which(prog=''):
-    def is_exe(fpath):
-        return os.path.exists(fpath) and os.access(fpath, os.X_OK)
-
-    def ext_candidates(fpath):
-        yield fpath
-        for ext in os.environ.get("PATHEXT", "").split(os.pathsep):
-            yield fpath + ext
-
-    fpath, fname = os.path.split(prog)
-    if fpath:
-        if is_exe(prog):
-            return prog
-    else:
-        tarr = os.environ["PATH"].split(os.pathsep)
-        tarr.append("/sbin")
-        tarr.append("/Applications/Vidalia.app/Contents/MacOS")
-        tarr.append("./")
-        #for path in os.environ["PATH"].split(os.pathsep):
-        for path in tarr:
-            exe_file = os.path.join(path, prog)
-            for candidate in ext_candidates(exe_file):
-                if is_exe(candidate):
-                    return candidate
-
-    return None
-
 # modifiable variables
 ########################################################
 base_socks_port = 9052
@@ -145,7 +117,7 @@ torarguments = {"--RunAsDaemon":'1',
                 "--CookieAuthentication":'0',
                 "--ControlPort":'%s',
                 "--PidFile":'tor%s.pid',
-                "--SocksPort":'%s',
+                "--SocksPort":'%s:%s',
                 "--DataDirectory":datadir + '/tor%s'
                 #"--HashedControlPassword":createTorPassword(secret=createRandAlpha(length=5)),
                 #"--SocksPort":'%s PreferSOCKSNoAuth',
