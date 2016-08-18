@@ -227,7 +227,12 @@ class SocketController:
                     --quiet
             '''
             sp = subprocess.Popen(runstmt)
-            #time.sleep(7)
+            '''
+                it will take a few seconds for the tor socket to get
+                established and then the correct pid to show up in the
+                respective .pid file
+            '''
+            time.sleep(4)
             # set the real pid of the tor sock
             try:
                 with open (self.datadir + '/tor' + str(t_instance) + "/tor%s.pid" % str(t_instance), "r") as myfile:
