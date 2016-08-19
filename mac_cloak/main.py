@@ -177,12 +177,12 @@ if __name__ == "__main__":
     cnt = 0
     while True:
         try:
-            sys.stdout.write("MAC Address on '%s': %s   \n" % (json_out['interface_name'],
-                                                               get_color_out(the_str=json_out['fake_mac_address'], the_color='red', do_bold=False)
+            sys.stdout.write("MAC Address on '%s': %s   \r" % (json_out['interface_name'],
+                                                               get_color_out(the_str=json_out['fake_mac_address'], the_color='red', do_bold=False).strip()
                                                                )
                              )
             sys.stdout.flush()
-            time.sleep(5)
+            time.sleep(60)
             cnt += 1
         except KeyboardInterrupt:
             break 
