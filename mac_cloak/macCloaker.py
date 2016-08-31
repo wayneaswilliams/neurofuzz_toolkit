@@ -3,7 +3,7 @@
     Contact:    <andres [at] neurofuzzsecurity dot com>
     Company:    neuroFuzz, LLC
     Date:       6/23/2012
-    Modified:   5/5/2016
+    Modified:   8/19/2016
     
     This software runs on certain flavors of Linux and Mac OSX (written on 10.7.x with python 2.6/2.7). 
     Its intent is to temporarily change/spoof the MAC Address on the machine running it. Note that you 
@@ -473,7 +473,7 @@ class MacCloak(object):
         return ':'.join(map(lambda x: "%02x" % x, mac))
 
 
-    def modMac(self, randomly=False, staticval='', reset=False):
+    def modMac(self, randomly=False, staticval='', reset=False, do_output=False):
         ''' kicks off the change MAC Address process '''
         
         use_mac_changer = False
@@ -485,32 +485,32 @@ class MacCloak(object):
         macchanger_pth = None
         macchanger_pth = which(program=self.macchanger)
         if macchanger_pth:
-            if not reset:
+            if not reset and do_output:
                 self.logger.info("MAC Changer is installed, using it...")
             use_mac_changer = True
             self.set_macchanger_path(the_path=macchanger_pth)
         else:
-            if not reset:
+            if not reset and do_output:
                 self.logger.info("MAC Changer is not installed, using ifconfig method!")
 
         if reset:
             if use_mac_changer:
                 self.useMacchanger()
             else:
-                self.useIfconfig(reset=True)
+                self.useIfconfig(reset=True, do_output=do_output)
                 
         if staticval:
             if use_mac_changer:
                 # TODO - set macchanger to use static mac address
                 self.useMacchanger()
             else:
-                self.useIfconfig(staticval=staticval)               
+                self.useIfconfig(staticval=staticval, do_output=do_output)               
 
         if randomly:
             if use_mac_changer:
                 self.useMacchanger()
             else:
-                self.useIfconfig(randomly=True)
+                self.useIfconfig(randomly=True, do_output=do_output)
 
             
     def modInterfaceState(self, thestate="up"):
@@ -542,10 +542,10 @@ class MacCloak(object):
             self.modInterfaceState(thestate='up')
             if self.checkIfaceMacAddress(fake=True) == 1:
                 if self.checkIfaceStateUp() == 1:
-                    self.handleDhcpReset()
+                    self.handleDhcpReset(do_output=do_output)
                     
 
-    def useIfconfig(self, randomly=False, staticval='', reset=False):
+    def useIfconfig(self, randomly=False, staticval='', reset=False, do_output=False):
         ''' use ifconfig to take action on the interface '''
 
         ''' reset back to normal '''
@@ -555,14 +555,15 @@ class MacCloak(object):
                 to its normal and original setting
             '''
             #print("Changing your MAC address to its original value ... %s") % self.originalMacAddress
-            self.logger.info("Changing your MAC address to its original value ... %s" % get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'))
+            if do_output:
+                self.logger.info("Changing your MAC address to its original value ... %s" % get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'))
             # on Linux
             if self.getRunningPlatform() == LINUX:
-                if self.processLinux(reset=True) == False:
+                if self.processLinux(reset=True, do_output=do_output) == False:
                     shut_down(s="Process failed")
             # on Mac OSX 
             if self.getRunningPlatform() == DARWIN:
-                if self.processDarwin(reset=True) == False:
+                if self.processDarwin(reset=True, do_output=do_output) == False:
                     shut_down(s="Process failed")
             return
 
@@ -571,71 +572,77 @@ class MacCloak(object):
             randVal = self.randomMAC()
             self.set_fake_mac_address(val=randVal)
             #print("Changing your original MAC address (%s) to something totally random...\n" % self.getOriginalMacAddress())
-            self.logger.info("Changing your original MAC address (%s) to '%s' ...\n" % (get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'),
-                                                                                        get_color_out(the_str='something totally random', the_color='red')
-                                                                                        )
-                             )
+            if do_output:
+                self.logger.info("Changing your original MAC address (%s) to '%s' ...\n" % (get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'),
+                                                                                            get_color_out(the_str='something totally random', the_color='red')
+                                                                                            )
+                                 )
             
             # on Linux - ifconfig en1 hw ether 00:e2:e3:e4:e5:e6
             if self.getRunningPlatform() == LINUX:
-                if self.processLinux(randVal=randVal) == False:
+                if self.processLinux(randVal=randVal, do_output=do_output) == False:
                     shut_down(s="Process failed")
             # on Mac OSX - ifconfig en1 ether 00:e2:e3:e4:e5:e6
             if self.getRunningPlatform() == DARWIN:
-                if self.processDarwin(randVal=randVal) == False:
+                if self.processDarwin(randVal=randVal, do_output=do_output) == False:
                     shut_down(s="Process failed")
         else:
             ''' this section sets the MAC Address to a static value '''
             self.set_fake_mac_address(val=staticval)
             #print("Changing your original MAC address (%s) to %s ...\n" % (self.getOriginalMacAddress(), staticval))
-            self.logger.info("Changing your original MAC address (%s) to '%s' ...\n" % (get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'),
-                                                                                        get_color_out(the_str=staticval, the_color='red')
-                                                                                        )
-                             )
+            if do_output:
+                self.logger.info("Changing your original MAC address (%s) to '%s' ...\n" % (get_color_out(the_str=self.getOriginalMacAddress(), the_color='green'),
+                                                                                            get_color_out(the_str=staticval, the_color='red')
+                                                                                            )
+                                 )
 
             # on Linux
             if self.getRunningPlatform() == LINUX:
-                if self.processLinux(staticval=staticval) == False:
+                if self.processLinux(staticval=staticval, do_output=do_output) == False:
                     shut_down(s="Process failed")
             # on Mac OSX 
             if self.getRunningPlatform() == DARWIN:
-                if self.processDarwin(staticval=staticval) == False:
+                if self.processDarwin(staticval=staticval, do_output=do_output) == False:
                     shut_down(s="Process failed")
         
                 
-    def checkIfaceStateUp(self):
+    def checkIfaceStateUp(self, do_output=False):
         ''' '''
         targ = 15
         cnt = 0
         while True:
             procOut = run_os_process(lParams=[self.defaultProg])            
             if self.targetInterface in procOut:
-                self.logger.info("Interface is %s" % get_color_out(the_str='up', the_color='green'))
+                if do_output:
+                    self.logger.info("Interface is %s" % get_color_out(the_str='up', the_color='green'))
                 return 1
             if cnt == targ:
-                self.logger.info("Interface seems %s" % get_color_out(the_str='up', the_color='green'))
+                if do_output:
+                    self.logger.info("Interface seems %s" % get_color_out(the_str='up', the_color='green'))
                 return 1
             cnt += 1
         return 0
 
 
-    def checkIfaceStateDown(self):
+    def checkIfaceStateDown(self, do_output=False):
         ''' '''
         targ = 15
         cnt = 0
         while True:
             procOut = run_os_process(lParams=[self.defaultProg])
             if self.targetInterface in procOut:
-                self.logger.info("Interface is %s" % get_color_out(the_str='up', the_color='green'))
+                if do_output:
+                    self.logger.info("Interface is %s" % get_color_out(the_str='up', the_color='green'))
                 return 0
             if cnt == targ:
-                self.logger.info("Interface seems %s" % get_color_out(the_str='down', the_color='red'))
+                if do_output:
+                    self.logger.info("Interface seems %s" % get_color_out(the_str='down', the_color='red'))
                 return 1
             cnt += 1
         return 0
 
 
-    def checkIfaceMacAddress(self, fake=True):
+    def checkIfaceMacAddress(self, fake=True, do_output=False):
         ''' '''
         time.sleep(5)
         targ = 5
@@ -646,13 +653,15 @@ class MacCloak(object):
             if fake == True:
                 if self.fakeMacAddress in procOut:
                     #print "MAC Address %s SET" % self.fakeMacAddress
-                    self.logger.info("MAC Address %s SET" % get_color_out(the_str=self.fakeMacAddress, the_color='red'))
+                    if do_output:
+                        self.logger.info("MAC Address %s SET" % get_color_out(the_str=self.fakeMacAddress, the_color='red'))
                     ret = 1
                     break
             else:
                 if self.originalMacAddress in procOut:
                     #print "MAC Address %s SET" % self.originalMacAddress
-                    self.logger.info("MAC Address %s SET" % get_color_out(the_str=self.originalMacAddress, the_color='green'))
+                    if do_output:
+                        self.logger.info("MAC Address %s SET" % get_color_out(the_str=self.originalMacAddress, the_color='green'))
                     ret = 1
                     break
             if cnt == targ:
@@ -662,7 +671,7 @@ class MacCloak(object):
         return ret
 
 
-    def processLinux(self, randVal=None, staticval='', reset=False):
+    def processLinux(self, randVal=None, staticval='', reset=False, do_output=False):
         ''' set MAC Address to some altered state on Linux'''
         # Puts interface down
         self.modInterfaceState(thestate='down')
@@ -670,7 +679,7 @@ class MacCloak(object):
             look for confirmation of interface
             being in a down state
         '''
-        if self.checkIfaceStateDown() == 1:
+        if self.checkIfaceStateDown(do_output=do_output) == 1:
             # alter MAC Address
             if randVal != None:
                 run_os_process(lParams=[self.defaultProg, self.targetInterface, "hw", "ether", randVal])
@@ -689,29 +698,29 @@ class MacCloak(object):
             self.modInterfaceState(thestate='up')
             
             if randVal or staticval:
-                if self.checkIfaceMacAddress(fake=True) == 1:
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                if self.checkIfaceMacAddress(fake=True, do_output=do_output) == 1:
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return True
                 else:
                     self.logger.info(SHIT_MSG)
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return False
                 
             if reset:
-                if self.checkIfaceMacAddress(fake=False) == 1:
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                if self.checkIfaceMacAddress(fake=False, do_output=do_output) == 1:
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return True
                 else:
                     self.logger.info(SHIT_MSG)
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return False
 
 
-    def processDarwin(self, randVal=None, staticval='', reset=False):
+    def processDarwin(self, randVal=None, staticval='', reset=False, do_output=False):
         ''' set MAC Address to some altered state on Mac OSX '''
         # change the MAC Address
         if randVal != None:
@@ -727,29 +736,29 @@ class MacCloak(object):
         # Puts interface down
         self.modInterfaceState(thestate='down')
         # Puts interface up
-        if self.checkIfaceStateDown() == 1:
+        if self.checkIfaceStateDown(do_output=do_output) == 1:
             self.modInterfaceState(thestate='up')
             
             if randVal or staticval:
-                if self.checkIfaceMacAddress(fake=True) == 1:
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                if self.checkIfaceMacAddress(fake=True, do_output=do_output) == 1:
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return True
                 else:
                     self.logger.info(SHIT_MSG)
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return False
                 
             if reset:
-                if self.checkIfaceMacAddress(fake=False) == 1:
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                if self.checkIfaceMacAddress(fake=False, do_output=do_output) == 1:
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return True
                 else:
                     self.logger.info(SHIT_MSG)
-                    if self.checkIfaceStateUp() == 1:
-                        self.handleDhcpReset()
+                    if self.checkIfaceStateUp(do_output=do_output) == 1:
+                        self.handleDhcpReset(do_output=do_output)
                     return False
 
 
@@ -919,7 +928,7 @@ class MacCloak(object):
         return self.dhcpUsed
 
 
-    def handleDhcpReset(self):
+    def handleDhcpReset(self, do_output=False):
         ''' handle the DHCP client reset '''
         
         '''
@@ -936,7 +945,8 @@ class MacCloak(object):
             dhclient = which(program=DHCLIENT)
             if dhclient:
                 #print "On Linux ... running: %s" % dhclient
-                self.logger.info("On Linux ... running: %s" % dhclient)
+                if do_output:
+                    self.logger.info("On Linux ... running: %s" % dhclient)
                 run_os_process(lParams=[dhclient, "-r", "-timeout", "30"])
                 time.sleep(5)
                 run_os_process(lParams=[dhclient, "-timeout", "30", self.targetInterface])
@@ -945,7 +955,8 @@ class MacCloak(object):
                 print "could not find an appropriate DHCP client,"
                 print "make sure your networking still works at this point\n"
                 '''
-                self.logger.info("could not find an appropriate DHCP client, make sure your networking still works at this point\n")
+                if do_output:
+                    self.logger.info("could not find an appropriate DHCP client, make sure your networking still works at this point\n")
 
         
         if self.dhcpUsed == True:
@@ -1023,7 +1034,7 @@ def cloak_mac(interface_name='', staticval='', api_logger=None, verbose=False):
         ret['interface_name'] = spoofmac.get_interface()
         #ret['interface_ix'] = 
         ret['original_mac_address'] = spoofmac.getOriginalMacAddress()
-        if verbose:
+        if verbose and not interface_name:
             '''
             log.info("The Current MAC address on interface '%s' is: '%s'" % (get_color_out(the_str=spoofmac.get_interface(), the_color='green'),
                                                                              get_color_out(the_str=spoofmac.getOriginalMacAddress(), the_color='green')
@@ -1045,24 +1056,33 @@ def cloak_mac(interface_name='', staticval='', api_logger=None, verbose=False):
         if am_i_root() == True:
             # no static value assumes random ...
             if not staticval:
-                if verbose:
+                if verbose and not interface_name:
                     #log.info("Changing MAC Address to something random")
                     api_logger.info("Changing MAC Address to something random")
 
-                spoofmac.modMac(randomly=True)
+                if interface_name:
+                    spoofmac.modMac(randomly=True)
+                else:
+                    spoofmac.modMac(randomly=True, do_output=True)
+                    
                 ret['random_set'] = True
             else:
-                if verbose:
+                if verbose and not interface_name:
                     #log.info("Changing MAC Address to %s" % staticval)
                     api_logger.info("Changing MAC Address to %s" % staticval)
 
-                spoofmac.modMac(randomly=False, staticval=staticval)
+                if interface_name:
+                    spoofmac.modMac(randomly=False, staticval=staticval)
+                else:
+                    spoofmac.modMac(randomly=False, staticval=staticval, do_output=True)
+                
                 ret['static_set'] = True
                 
             ret['fake_mac_address'] = spoofmac.get_fake_mac_address()
-            if verbose:
+            if verbose and not interface_name:
                 #log.info("Your New MAC address is: %s\n\n" % get_color_out(the_str=spoofmac.get_fake_mac_address(), the_color='red'))
                 api_logger.info("Your New MAC address is: %s\n\n" % get_color_out(the_str=spoofmac.get_fake_mac_address(), the_color='red'))
+
         else:
             shut_down(s="root privileges are necessary and dont seem to be available for this program run")
     else:
@@ -1085,7 +1105,7 @@ def reset_mac(vals={}, api_logger=None):
 
             spoofmac.set_interface(iface=j_vals['interface_name'])
             spoofmac.setOriginalMacAddress(mac=j_vals['original_mac_address'])
-            spoofmac.modMac(randomly=False, staticval='', reset=True)
+            spoofmac.modMac(randomly=False, staticval='', reset=True, do_output=True)
         else:
             shut_down(s="root privileges are necessary and dont seem to be available for this program run")
 ###############################################

@@ -3,7 +3,7 @@
     Contact:    <andres [at] neurofuzzsecurity dot com>
     Company:    neuroFuzz, LLC
     Date:       6/23/2012
-    Modified:   5/5/2016
+    Modified:   8/19/2016
     
     This software runs on certain flavors of Linux and Mac OSX (written on 10.7.x with python 2.6/2.7). 
     Its intent is to temporarily change/spoof the MAC Address on the machine running it. Note that you 
@@ -84,6 +84,7 @@ import json
 import time
 import logging
 import logging.config
+from random import randint
 from macCloaker import *
 
 DEBUG = False
@@ -143,49 +144,91 @@ log = logging.LoggerAdapter(log, APP_META)
 if __name__ == "__main__":
     
     staticval = False
-    options, remainder = getopt.getopt(sys.argv[1:], '', ['static=',])
+    rotate_mac = False
+    options, remainder = getopt.getopt(sys.argv[1:], '', ['static=','rotate'])
     
     for opt, arg in options:
         if opt == '--static':
             staticval = arg
+        if opt == '--rotate':
+            rotate_mac = True
+            
+    if staticval and rotate_mac:
+        print "\nCannot process a static MAC address value and set rotation on\n\n"
+        sys.exit()
             
     if staticval:
         if not validate_mac_address_format(the_mac=staticval):
             print "\n'%s' - Not a valid MAC Address\n\n" % staticval
             sys.exit()
     
-    json_out = ''
-
-    if staticval:
-        json_out = cloak_mac(staticval=staticval, api_logger=log, verbose=True)
-    else:
-        json_out = cloak_mac(api_logger=log, verbose=True)
-       
-            
-    if DEBUG:
-        print json_out
-    
-    print("Now go do whatever it is you need to do with a spoofed MAC Address, wink wink\n\n")
-    print("Press [CTRL-C] when you want to set the Mac back to normal")
-    
-    json_out = json.loads(json_out)
     '''
-        this needs to become a while loop that waits for user
-        to hit a key
-    ''' 
-    #cr = raw_input("> ")
-    cnt = 0
-    while True:
+        go in here for randomly chosen MAC addresses
+        that will rotate at certain intervals
+    '''
+    if rotate_mac:
+        cnt = 0
+        while True:
+            try:
+                if cnt == 0:
+                    json_out = ''
+                    json_out = cloak_mac(api_logger=log, verbose=True)
+                    
+                    print("Now go do whatever it is you need to do with a spoofed MAC Address, wink wink ...")
+                    print("Press [CTRL-C] when you want to set the Mac back to normal\n\n")
+                    
+                else:
+                    json_out = cloak_mac(interface_name=json_out['interface_name'], api_logger=log, verbose=True)
+                    
+                if DEBUG:
+                    print json_out
+
+                json_out = json.loads(json_out)            
+    
+                sys.stdout.write("MAC Address on '%s': %s   \n" % (json_out['interface_name'],
+                                                                   get_color_out(the_str=json_out['fake_mac_address'],
+                                                                                 the_color='red',
+                                                                                 do_bold=False).strip()
+                                                                   )
+                                 )
+                sys.stdout.flush()
+                time.sleep(randint(3900,10800))
+                cnt += 1
+            except KeyboardInterrupt:
+                print
+                break
+    else:
+        '''
+            go in here for static set MAC addresses or
+            randomly chosen MAC address that will not
+            rotate
+        '''
         try:
-            sys.stdout.write("MAC Address on '%s': %s   \r" % (json_out['interface_name'],
-                                                               get_color_out(the_str=json_out['fake_mac_address'], the_color='red', do_bold=False).strip()
+            json_out = ''
+            if staticval:
+                json_out = cloak_mac(staticval=staticval, api_logger=log, verbose=True)
+            else:
+                json_out = cloak_mac(api_logger=log, verbose=True)
+                
+            print("Now go do whatever it is you need to do with a spoofed MAC Address, wink wink ...")
+            print("Press [CTRL-C] when you want to set the Mac back to normal\n\n")
+
+            if DEBUG:
+                print json_out
+
+            json_out = json.loads(json_out)            
+    
+            sys.stdout.write("MAC Address on '%s': %s   \n" % (json_out['interface_name'],
+                                                               get_color_out(the_str=json_out['fake_mac_address'],
+                                                                             the_color='red',
+                                                                             do_bold=False).strip()
                                                                )
                              )
-            sys.stdout.flush()
-            time.sleep(60)
-            cnt += 1
+            while True:
+                pass
+            #sys.stdout.flush()
         except KeyboardInterrupt:
-            break 
-    
+            print
+            pass
+
     reset_mac(vals=json.dumps(json_out), api_logger=log)
-    
