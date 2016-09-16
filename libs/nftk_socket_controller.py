@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 08/18/2016
+    Last Modified: 09/15/2016
     
     Class to spawn off a number of instances of tor and set
     a socket to use this SOCKS5 instance
@@ -58,6 +58,7 @@ import os
 import glob
 import time
 import socket
+import signal
 import subprocess
 from random import choice
 from vars import socket_controller_vars
@@ -245,4 +246,16 @@ class SocketController:
                             break
                     except:
                         continue
+
+                    
+    def kill_sockets(self):
+        ''' '''
+        the_pids = self.get_tor_pids()
+        if len(the_pids) > 0:
+            for the_pid in the_pids:
+                if the_pid:
+                    try:
+                        os.kill(the_pid, signal.SIGQUIT)
+                    except OSError:
+                        pass
 
