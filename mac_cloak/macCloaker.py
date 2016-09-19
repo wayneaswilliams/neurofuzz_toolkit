@@ -947,9 +947,15 @@ class MacCloak(object):
                 #print "On Linux ... running: %s" % dhclient
                 if do_output:
                     self.logger.info("On Linux ... running: %s" % dhclient)
-                run_os_process(lParams=[dhclient, "-r", "-timeout", "30"])
-                time.sleep(5)
-                run_os_process(lParams=[dhclient, "-timeout", "30", self.targetInterface])
+                    
+                run_platform = self.getRunningPlatformFlavor()                
+                if run_platform == 'fedora':
+                    run_os_process(lParams=[dhclient, "-r", "--timeout", "30"])
+                    time.sleep(5)
+                    run_os_process(lParams=[dhclient, "--timeout", "30", self.targetInterface])
+                elif run_platform == 'ubuntu' or run_platform == 'debian':
+                    run_os_process(lParams=[dhclient, self.targetInterface])
+                
             else:
                 '''
                 print "could not find an appropriate DHCP client,"
