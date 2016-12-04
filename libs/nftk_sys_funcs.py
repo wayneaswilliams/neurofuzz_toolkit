@@ -168,3 +168,23 @@ def target_ip_private(ip_addr=''):
     ''' returns bool stating whether or not the ip address passed in is private/non-routable '''
     target_net = ipaddr.IPv4Network(address=ip_addr)
     return target_net.IsRFC1918()
+
+
+def filter_non_printable(the_str):
+    ret=""
+    for c in str:
+        if ord(c) > 31 or ord(c) == 9:
+            ret += c
+        else:
+            ret += " "
+    return ret
+
+
+def pid_name(the_pid=0):
+    try:
+        with open(os.path.join('/proc/', pid, 'cmdline'), 'r') as pidfile:
+            return filter_non_printable(pidfile.readline())
+
+    except Exception:
+        pass
+        return
