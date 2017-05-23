@@ -125,6 +125,7 @@ for zf in zFile.namelist():
         target_dir = 'mac_cloak/'
 
     target_file = get_raw_filename(t_path=zf)
+    
     if target_file:
         
         target_path = target_dir + target_file
