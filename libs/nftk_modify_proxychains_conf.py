@@ -3,14 +3,14 @@
     AUTHORS      : Andres Andreu <andres [at] neurofuzzsecurity dot com>
     MODIFIED BY  : Andres Andreu
     DATE         : 07/11/2015
-    LAST UPDATE  : 05/15/2016
+    LAST UPDATE  : 04/25/2017
     
     modifies a proxychains.conf template and generates a version of this file
     for use by proxychains
     
     BSD 3-Clause License
     
-    Copyright (c) 2015-2016, Andres Andreu, neuroFuzz LLC
+    Copyright (c) 2015-2017, Andres Andreu, neuroFuzz LLC
     All rights reserved.
     
     Redistribution and use in source and binary forms, with or without modification,
@@ -58,12 +58,16 @@ import socket
 #################################################################
 class proxychains_conf_mod(object):
 
-    def __init__(self, proxychains_conf_file_template=''):
+    def __init__(self, proxychains_conf_file_template='', alternate_file_path=''):
         if proxychains_conf_file_template:
             self.proxychains_conf_file_template = proxychains_conf_file_template
         else:
             self.proxychains_conf_file_template = "./proxychains.conf.template"
-        self.proxychains_file = "./proxychains.conf"
+            
+        if alternate_file_path:
+            self.proxychains_file = "{}/{}".format(alternate_file_path, 'proxychains.conf')
+        else:
+            self.proxychains_file = "./proxychains.conf"
         
         self.raw_lines = []
         # read in sshd_config data
@@ -75,7 +79,7 @@ class proxychains_conf_mod(object):
     def add_proxy_servers_to_list(self, thelist=[]):
         if thelist:
             for tlist in thelist:
-                t_str = "%s  %s %s" % ('socks5', tlist[0], tlist[1])
+                t_str = "{}  {} {}".format('socks5', str(tlist[0]), str(tlist[1]))
                 if t_str not in self.proxy_server_list:
                     self.proxy_server_list.append(t_str)
 
@@ -104,7 +108,7 @@ class proxychains_conf_mod(object):
                 #print "%d - %s" % (index,item)
                 if item.startswith('socks'):
                     the_ix = index
-            
+
             '''
                 socks5     127.0.0.1 9050
             '''
@@ -115,8 +119,11 @@ class proxychains_conf_mod(object):
             if the_ix > 0:
                 del self.raw_lines[-1]
                 #print
-                for s_kn_port in self.proxy_server_list:
-                    self.raw_lines.append(s_kn_port + '\n')
+                
+            if not (self.raw_lines[len(self.raw_lines) - 1]).endswith("\n"):
+                self.raw_lines.append("\n")
+            for s_kn_port in self.proxy_server_list:
+                self.raw_lines.append("{}\n".format(s_kn_port))
 
 #################################################################
 
@@ -124,11 +131,12 @@ class proxychains_conf_mod(object):
 '''
     API
 '''
-def neurofuzz_modify_proxychains_conf(t_list=[]):
-    proxychainsconf = proxychains_conf_mod()
+def neurofuzz_modify_proxychains_conf(t_list=[], alt_fpath=''):
+    
+    proxychainsconf = proxychains_conf_mod(alternate_file_path=alt_fpath)
     
     #proxychainsconf.write_proxychains_conf_file()
-    proxychainsconf.consume_proxychains_config_file()
+    #proxychainsconf.consume_proxychains_config_file()
     proxychainsconf.add_proxy_servers_to_list(thelist=t_list)
     proxychainsconf.modify()
     #print proxychainsconf.dump_modified_config()
