@@ -2,29 +2,29 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 06/17/2016
-    
+    Last Modified: 03/29/2018
+
     generic functions that operate at a system level
 
     BSD 3-Clause License
-    
-    Copyright (c) 2012-2016, Andres Andreu, neuroFuzz LLC
+
+    Copyright (c) 2012-2018, Andres Andreu, neuroFuzz LLC
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without modification,
     are permitted provided that the following conditions are met:
-    
+
     1. Redistributions of source code must retain the above copyright notice,
     this list of conditions and the following disclaimer.
-    
+
     2. Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation and/or
     other materials provided with the distribution.
-    
+
     3. Neither the name of the copyright holder nor the names of its contributors may
     be used to endorse or promote products derived from this software without specific
     prior written permission.
-    
+
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
     EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -35,16 +35,16 @@
     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
     OF SUCH DAMAGE.
-    
+
     *** Take note:
     If you use this for criminal purposes and get caught you are on
     your own and I am not liable. I wrote this for legitimate
     pen-testing and auditing purposes.
     ***
-    
+
     Be kewl and give credit where it is due if you use this. Also,
     send me feedback as I don't have the bandwidth to test for every
-    condition - Dre 
+    condition - Dre
 """
 import sys
 import os
@@ -102,9 +102,11 @@ def which(program=""):
             system) please get that data back to me so that we
             can all benefit from it.
         '''
-        tarr.append("/sbin")
-        tarr.append("./")
-        
+        if "/sbin" not in tarr:
+            tarr.append("/sbin")
+        if "./" not in tarr:
+            tarr.append("./")
+
         for path in tarr:
             exe_file = os.path.join(path, program)
             for candidate in ext_candidates(exe_file):
@@ -139,7 +141,7 @@ def get_local_ip():
     ''' return the ip address of the system running code that uses this lib '''
     ifconfig_prog = None
     ifconfig_prog = which(program='ifconfig')
-    
+
     if ifconfig_prog:
         f = os.popen(ifconfig_prog)
         for iface in [' '.join(i) for i in iter(lambda: list(itertools.takewhile(lambda l: not l.isspace(),f)), [])]:
@@ -154,7 +156,7 @@ def get_local_ip():
                     '''
                         TODO - this needs work ... as I have made
                         some assumptions
-                        
+
                         maybe let the user choose the source ip?
                         maybe add some intelligence here ...
                     '''
@@ -170,21 +172,18 @@ def target_ip_private(ip_addr=''):
     return target_net.IsRFC1918()
 
 
-def filter_non_printable(the_str):
-    ret=""
-    for c in str:
-        if ord(c) > 31 or ord(c) == 9:
-            ret += c
-        else:
-            ret += " "
+def delete_file(target_file=''):
+    ''' '''
+    if target_file:
+        if os.path.exists(target_file):
+            os.remove(target_file)
+
+
+
+def is_a_file(fpath=''):
+    ''' '''
+    ret = False
+    if fpath and '\\' not in fpath:
+        if os.path.isfile(fpath):
+            ret = True
     return ret
-
-
-def pid_name(the_pid=0):
-    try:
-        with open(os.path.join('/proc/', pid, 'cmdline'), 'r') as pidfile:
-            return filter_non_printable(pidfile.readline())
-
-    except Exception:
-        pass
-        return
