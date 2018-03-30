@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 12/03/2016
+    Last Modified: 09/15/2016
     
     Class to spawn off a number of instances of tor and set
     a socket to use this SOCKS5 instance
@@ -63,24 +63,10 @@ import subprocess
 from random import choice
 from vars import socket_controller_vars
 
-#########################################################
 def clean_slate():
     for fname in glob.glob(socket_controller_vars.getDataDir() + '/tor*/tor*.pid'):
         if os.path.exists(fname):
             os.remove(fname)
-
-
-def clean_up_tor_socks():
-    for fname in glob.glob(socket_controller_vars.getDataDir() + '/tor*/tor*.pid'):
-        the_pid = ''
-        with open (fname, "r") as myfile:
-            the_pid = int(myfile.read().strip())
-        if the_pid:
-            try:
-                os.kill(the_pid, signal.SIGQUIT)
-            except OSError:
-                pass
-#########################################################
 
 class SocketController:
     def __init__(self, tor_executable_path=''):
