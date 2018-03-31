@@ -122,8 +122,8 @@ class proxychains_conf_mod(object):
                     self.raw_lines.append("{}\n".format(s_kn_port))
             else:
                 for s_kn_port in self.proxy_server_list:
-                    self.raw_lines.append("\n{}\n".format(s_kn_port))
-
+                    self.raw_lines.append("\n{}".format(s_kn_port))
+                self.raw_lines.append("\n")
 #################################################################
 
 
@@ -131,6 +131,7 @@ class proxychains_conf_mod(object):
     API
 '''
 def neurofuzz_modify_proxychains_conf(t_list=[]):
+    ''' '''
     if len(t_list) > 0:
         proxychainsconf = proxychains_conf_mod()
 
