@@ -9,7 +9,7 @@
 
     BSD 3-Clause License
 
-    Copyright (c) 2012-2016, Andres Andreu, neuroFuzz LLC
+    Copyright (c) 2012-2018, Andres Andreu, neuroFuzz LLC
     All rights reserved.
 
     Redistribution and use in source and binary forms, with or without modification,
