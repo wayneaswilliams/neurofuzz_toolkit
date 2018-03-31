@@ -3,29 +3,29 @@
     Company: neuroFuzz, LLC
     Date: 10/11/2012
     Last Modified: 09/15/2016
-    
+
     Class to spawn off a number of instances of tor and set
     a socket to use this SOCKS5 instance
 
     BSD 3-Clause License
-    
+
     Copyright (c) 2012-2016, Andres Andreu, neuroFuzz LLC
     All rights reserved.
-    
+
     Redistribution and use in source and binary forms, with or without modification,
     are permitted provided that the following conditions are met:
-    
+
     1. Redistributions of source code must retain the above copyright notice,
     this list of conditions and the following disclaimer.
-    
+
     2. Redistributions in binary form must reproduce the above copyright notice,
     this list of conditions and the following disclaimer in the documentation and/or
     other materials provided with the distribution.
-    
+
     3. Neither the name of the copyright holder nor the names of its contributors may
     be used to endorse or promote products derived from this software without specific
     prior written permission.
-    
+
     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY
     EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
@@ -36,16 +36,16 @@
     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY
     OF SUCH DAMAGE.
-    
+
     *** Take note:
     If you use this for criminal purposes and get caught you are on
     your own and I am not liable. I wrote this for legitimate
     pen-testing and auditing purposes.
     ***
-    
+
     Be kewl and give credit where it is due if you use this. Also,
     send me feedback as I don't have the bandwidth to test for every
-    condition - Dre 
+    condition - Dre
 """
 import sys
 try:
@@ -71,50 +71,50 @@ def clean_slate():
 class SocketController:
     def __init__(self, tor_executable_path=''):
         self.torpath = tor_executable_path
-        
+
         self.socks_control_ports = {}
         self.socks_port_list = []
         self.pids = []
-        
+
         self.base_socks_port = socket_controller_vars.getBaseSocksPort()
         self.base_control_port = socket_controller_vars.getBaseControlPort()
         self.datadir = socket_controller_vars.getDataDir()
         self.torfname = socket_controller_vars.getTorFileName()
         self.torarguments = socket_controller_vars.getTorArguments()
-        
+
         sbounds = socket_controller_vars.getSocketBounds()
         self.tor_socket_lower_bound = sbounds[0]
         self.tor_socket_upper_bound = sbounds[1]
-        
+
         self.lastProxUsed = 0
         self.debug = socket_controller_vars.getDebug()
         self.selfip = socket_controller_vars.getSocketIp()
         socket.setdefaulttimeout(10)
-        
+
     def get_port_list(self):
         return self.socks_port_list
-        
+
     def set_lower_bound(self, val=""):
         self.tor_socket_lower_bound = val
-        
+
     def set_upper_bound(self, val=""):
         self.tor_socket_upper_bound = val
-        
+
     def set_local_ip_addr(self, val=""):
         self.selfip = val
-        
+
     def setLastUsed(self, val=""):
         self.lastProxUsed = val
-        
+
     def getLastUsed(self):
         return self.lastProxUsed
-    
+
     def setDebug(self, val=""):
         self.debug = val
-        
+
     def get_data_dir(self):
         return self.datadir
-        
+
     def spawn_sockets(self):
         ''' kick off a pool of tor instances '''
         for i in range(self.tor_socket_lower_bound, self.tor_socket_upper_bound):
@@ -123,7 +123,7 @@ class SocketController:
     def get_tor_pids(self):
         if self.pids:
             return self.pids
-            
+
     def set_socks_prox(self):
         '''
         print
@@ -134,7 +134,7 @@ class SocketController:
             prot = int(choice(self.socks_port_list))
         except IndexError:
             return None
-        
+
         s = socks.socksocket()
         if s:
             try:
@@ -143,7 +143,7 @@ class SocketController:
                 s.setproxy(proxy_type=socks.PROXY_TYPE_SOCKS5, addr=self.selfip, port=prot)
             self.setLastUsed(val=prot)
             return (s, self.selfip, prot)
-        
+
         '''
         if prot != self.getLastUsed():
             if self.debug:
@@ -158,8 +158,8 @@ class SocketController:
                 return (s, self.selfip, prot)
         '''
         return None
-    
-            
+
+
     def spawn_socket(self, t_instance=0):
         '''
             kick off a single indexed tor instance
@@ -167,7 +167,7 @@ class SocketController:
         if t_instance >= 0:
             '''
                 first create data file
-                Simply opening a file in write mode will create it, if it doesn't exist. 
+                Simply opening a file in write mode will create it, if it doesn't exist.
                 If the file does exist, the act of opening it in write mode will completely
                 overwrite its contents
             '''
@@ -181,15 +181,15 @@ class SocketController:
                     pass
             except IOError:
                 pass
-            
+
             runstmt = []
             runstmt.append(self.torpath)
-            
+
             bsp = str(self.base_socks_port+t_instance)
             bcp = str(self.base_control_port+t_instance)
             self.socks_control_ports[bsp] = bcp
             self.socks_port_list.append(bsp)
-            
+
             for k in self.torarguments.iterkeys():
                 if k == '--ControlPort':
                     runstmt.append(k)
@@ -206,23 +206,23 @@ class SocketController:
                 else:
                     runstmt.append(k)
                     runstmt.append(self.torarguments[k])
-            
+
             runstmt.append("--quiet")
-            
+
             if self.debug:
                 print "\n"
                 print runstmt
                 print "\n"
-            
+
             '''
                 notes:
-                
-                tor --RunAsDaemon 1 
-                    --CookieAuthentication 0 
+
+                tor --RunAsDaemon 1
+                    --CookieAuthentication 0
                     --HashedControlPassword 16:3209E94C0EEF6A9660D0645B037E16730B553C627462CD233F33B0F950
                     --ControlPort 8124
-                    --PidFile tor4.pid 
-                    --SocksPort 9056 PreferSOCKSNoAuth
+                    --PidFile tor4.pid
+                    --SocksPort ip:port
                     --DataDirectory tordata/tor4
                     --Log info file /path/tordata/logs/tor_log_2015-07-23_09_41_04'
                     --quiet
@@ -247,7 +247,7 @@ class SocketController:
                     except:
                         continue
 
-                    
+
     def kill_sockets(self):
         ''' '''
         the_pids = self.get_tor_pids()
@@ -258,4 +258,3 @@ class SocketController:
                         os.kill(the_pid, signal.SIGQUIT)
                     except OSError:
                         pass
-
