@@ -196,7 +196,7 @@ class SocketController:
                     runstmt.append(self.torarguments[k] % bcp)
                 elif k == '--PidFile':
                     runstmt.append(k)
-                    runstmt.append(self.torarguments[k] % str(t_instance))
+                    runstmt.append(self.torarguments[k] % (str(t_instance), str(t_instance)))
                 elif k == '--SocksPort':
                     runstmt.append(k)
                     runstmt.append(self.torarguments[k] % (self.selfip,bsp))
