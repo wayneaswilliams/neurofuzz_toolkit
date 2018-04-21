@@ -2,7 +2,7 @@
     Author: Andres Andreu < andres at neurofuzzsecurity dot com >
     Company: neuroFuzz, LLC
     Date: 10/11/2012
-    Last Modified: 03/29/2018
+    Last Modified: 04/20/2018
 
     generic functions that operate at a system level
 
@@ -179,6 +179,11 @@ def delete_file(target_file=''):
             os.remove(target_file)
 
 
+def check_dir_exists(the_dir=''):
+    if the_dir:
+        if not os.path.exists(the_dir):
+            os.makedirs(the_dir)
+
 
 def is_a_file(fpath=''):
     ''' '''
@@ -187,3 +192,10 @@ def is_a_file(fpath=''):
         if os.path.isfile(fpath):
             ret = True
     return ret
+
+
+def check_dir_exists(the_dir=''):
+    if the_dir:
+        if not os.path.exists(the_dir):
+            os.makedirs(the_dir)
+>>>>>>> added function check_dir_exists
