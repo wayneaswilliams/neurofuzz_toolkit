@@ -116,7 +116,7 @@ torfname = 'tor%sfile'
 torarguments = {"--RunAsDaemon":'1',
                 "--CookieAuthentication":'0',
                 "--ControlPort":'%s',
-                "--PidFile":datadir + 'tor%s/tor%s.pid',
+                "--PidFile":datadir + '/tor%s/tor%s.pid',
                 "--SocksPort":'%s:%s',
                 "--DataDirectory":datadir + '/tor%s'
                 #"--HashedControlPassword":createTorPassword(secret=createRandAlpha(length=5)),
