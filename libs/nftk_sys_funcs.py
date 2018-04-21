@@ -198,4 +198,3 @@ def check_dir_exists(the_dir=''):
     if the_dir:
         if not os.path.exists(the_dir):
             os.makedirs(the_dir)
->>>>>>> added function check_dir_exists
